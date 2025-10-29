@@ -1,4 +1,4 @@
-# Google Drive Viewer
+# Google Drive Viewer - Wordpress Plugin
 
 **Google Drive Viewer** is a lightweight, no-OAuth WordPress plugin that lets you embed and browse folders from your Google Drive directly on your site using a simple `[google_drive_viewer]` shortcode.
 
