@@ -69,3 +69,15 @@
 .gdv-theme-yellow .mime.file,
 .gdv-browser.gdv-theme-yellow .gdv .mime.folder,
 .gdv-browser.gdv-theme-yellow .gdv .mime.file { color: #f59e0b; } /* amber-500 */
+
+
+/* Distinguish files from folders in yellow theme */
+.gdv-theme-yellow .mime.folder { color: #f59e0b; } /* amber-500 */
+.gdv-theme-yellow .mime.file   { color: #fbbf24; } /* amber-400, lighter for contrast */
+
+/* Optional outline effect for files */
+.gdv-theme-yellow .mime.file path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
