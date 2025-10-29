@@ -34,34 +34,12 @@
     return ICON.doc();
   }
 
-  function showError(container, msg, extraLines){
-    let html = '<div class="gdv" style="border:1px solid #ef4444;border-radius:10px;padding:12px;color:#991b1b;background:#fee2e2;">'
-      + '<div style="font-weight:600;margin-bottom:6px;">Google Drive Viewer error</div>'
-      + '<div style="white-space:pre-wrap;word-break:break-word;">'+msg+'</div>';
-    if (Array.isArray(extraLines) && extraLines.length){
-      html += '<hr style="border:none;border-top:1px solid #fca5a5;margin:10px 0;">'
-        + '<div style="font-weight:600;margin-bottom:6px;">Recent debug</div>'
-        + '<div style="max-height:180px;overflow:auto;font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:12px;background:#fff;padding:8px;border:1px solid #fecaca;border-radius:8px;">'
-        + extraLines.map(l=>String(l)).join('\n') + '</div>';
-    }
-    html += '</div>';
-    container.innerHTML = html;
-  }
-
   async function apiFetch(url){
-    const r = await fetch(url.toString(), {
-      credentials:'same-origin',
-      headers: { 'X-WP-Nonce': GDV.restNonce }
-    });
-    if (!r.ok) {
+    const r = await fetch(url.toString(), {credentials:'same-origin', headers:{'X-WP-Nonce': GDV.restNonce}});
+    if (!r.ok){
       let msg = 'REST ' + r.status;
-      try {
-        const j = await r.json();
-        if (j?.detail) msg += ' – ' + (typeof j.detail==='string' ? j.detail : JSON.stringify(j.detail));
-        if (j?.url) msg += ' (url: '+ j.url +')';
-      } catch(_) {
-        try { msg += ' – ' + (await r.text()).slice(0,200); } catch(_e){}
-      }
+      try { const j=await r.json(); if(j?.detail) msg+=' – '+(typeof j.detail==='string'?j.detail:JSON.stringify(j.detail)); }
+      catch(_){ try{ msg+=' – '+(await r.text()).slice(0,200);}catch(_e){} }
       throw new Error(msg);
     }
     return r.json();
@@ -70,72 +48,80 @@
   async function apiList(folderId, pageToken=''){
     const url = new URL(GDV.rest);
     url.searchParams.set('folderId', folderId);
-    if (pageToken) url.searchParams.set('pageToken', pageToken);
+    if(pageToken) url.searchParams.set('pageToken', pageToken);
     return apiFetch(url);
   }
-  async function apiDebug(){
-    try { return apiFetch(new URL(GDV.restDebug)); }
-    catch(e){ return { log: [] }; }
-  }
-  async function apiPing(){
-    try { return apiFetch(new URL(GDV.restPing)); }
-    catch(e){ throw e; }
-  }
+
+  async function apiDebug(){ try{return apiFetch(new URL(GDV.restDebug));}catch(e){return {log:[]};} }
+  async function apiPing(){ try{return apiFetch(new URL(GDV.restPing));}catch(e){throw e;} }
 
   function render(container,state){
     container.innerHTML='';
     const root=el('div',{class:'gdv'});
 
-    // breadcrumbs (simple links + ›)
+    // breadcrumbs
     const bar=el('div',{class:'bar'});
     state.crumbs.forEach((c,i)=>{
       const a=el('a',{href:'#',class:'crumb'},c.name);
-      a.addEventListener('click',e=>{e.preventDefault();state.nav(c.id);});
+      a.addEventListener('click',e=>{e.preventDefault();state.nav(c.id,false);});
       bar.appendChild(a);
       if(i<state.crumbs.length-1) bar.appendChild(el('span',{class:'sep'},'›'));
     });
     root.appendChild(bar);
 
-    // table (3 columns: Name | Last updated | Actions)
+    // table
     const panel=el('div',{class:'panel'});
     const table=el('table');
     table.innerHTML='<thead><tr><th>Name</th><th>Last updated</th><th>Actions</th></tr></thead>';
     const tbody=el('tbody');
 
+    // add '..' up-directory entry
+    if(state.crumbs.length>1){
+      const tr=el('tr');
+      const nameTd=el('td'); nameTd.className='name-cell';
+      const icon=ICON.folder(); icon.classList.add('mime');
+      const up=el('a',{href:'#',class:'row-link'},'..');
+      up.addEventListener('click',e=>{
+        e.preventDefault();
+        state.crumbs.pop();
+        const parent=state.crumbs[state.crumbs.length-1];
+        state.nav(parent.id,false);
+      });
+      nameTd.appendChild(icon); nameTd.appendChild(up);
+      tr.appendChild(nameTd);
+      tr.appendChild(el('td',{},'')); // date empty
+      tr.appendChild(el('td',{},'')); // actions empty
+      tbody.appendChild(tr);
+    }
+
     // Folders
     state.folders.forEach(f=>{
       const tr=el('tr');
-
       const nameTd=el('td'); nameTd.className='name-cell';
       const icon=iconFor('application/vnd.google-apps.folder'); icon.classList.add('mime');
       const a=el('a',{href:'#',class:'row-link'},f.name);
       a.addEventListener('click', e=>{ e.preventDefault(); state.nav(f.id,true,f.name); });
       nameTd.appendChild(icon); nameTd.appendChild(a);
       tr.appendChild(nameTd);
-
       tr.appendChild(el('td',{},f.modified||''));
-      tr.appendChild(el('td',{},'')); // no actions for folders
+      tr.appendChild(el('td',{},'')); 
       tbody.appendChild(tr);
     });
 
     // Files
     state.files.forEach(f=>{
       const tr=el('tr');
-
       const nameTd=el('td'); nameTd.className='name-cell';
       const icon=iconFor(f.mimeType); icon.classList.add('mime');
       const nameLink=el('a',{href:f.webViewLink,target:'_blank',rel:'noopener',class:'row-link'},f.name);
       nameTd.appendChild(icon); nameTd.appendChild(nameLink);
       tr.appendChild(nameTd);
-
       tr.appendChild(el('td',{},f.modified||''));
-
       const actions=el('td'); actions.className='actions';
       const viewA=el('a',{class:'icon-btn',href:f.webViewLink,target:'_blank',rel:'noopener',title:'View'}); viewA.appendChild(ICON.view());
       const dlA=el('a',{class:'icon-btn',href:(f.webContentLink||'#'),target:'_blank',rel:'noopener',title:'Download'}); dlA.appendChild(ICON.download());
       actions.appendChild(viewA); actions.appendChild(dlA);
       tr.appendChild(actions);
-
       tbody.appendChild(tr);
     });
 
@@ -148,8 +134,7 @@
   async function boot(){
     document.querySelectorAll('.gdv-browser').forEach(async container=>{
       try{
-        try { await apiPing(); }
-        catch(e){ const dbg=await apiDebug(); return showError(container, 'REST health-check failed. '+(e?.message||''), dbg.log); }
+        try{await apiPing();}catch(e){const dbg=await apiDebug();return container.innerHTML='<div style="color:red">'+(e?.message||'REST failed')+'</div>'; }
 
         const rootId=container.dataset.root||GDV.rootFolder;
         const state={
@@ -164,20 +149,14 @@
               webContentLink:f.webContentLink||('https://drive.google.com/uc?export=download&id='+f.id)
             }));
             if(push){ this.crumbs.push({id:folderId,name}); history.pushState({folderId},'', '#'+folderId); }
-            else { const i=this.crumbs.findIndex(c=>c.id===folderId); if(i>=0) this.crumbs=this.crumbs.slice(0,i+1); }
             render(container,this);
           }
         };
-
         const start=location.hash?location.hash.substring(1):rootId;
         if(start!==rootId) state.crumbs.push({id:start,name:'Folder'});
         await state.nav(start);
         window.addEventListener('popstate',()=>{ const id=location.hash?location.hash.substring(1):rootId; state.nav(id); });
-      }catch(err){
-        const dbg = await apiDebug();
-        console.error('GDV error:', err);
-        showError(container, (err?.message||'Unknown'), dbg.log);
-      }
+      }catch(err){ console.error('GDV error',err); container.innerHTML='<div style="color:red">'+(err?.message||'Unknown')+'</div>'; }
     });
   }
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot):boot();
