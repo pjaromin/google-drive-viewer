@@ -53,3 +53,19 @@
 /* Row link UX */
 .gdv .name-cell .row-link { cursor: pointer; display:inline-flex; align-items:center; gap:8px; text-decoration:none; }
 .gdv .name-cell .row-link:hover { text-decoration:underline; }
+
+/* Default icon colors (fallback) */
+.gdv .mime.folder { color: #6b7280; } /* gray-500 */
+.gdv .mime.file   { color: #6b7280; }
+
+/* THEME: blue */
+.gdv-theme-blue .mime.folder,
+.gdv-theme-blue .mime.file,
+.gdv-browser.gdv-theme-blue .gdv .mime.folder,
+.gdv-browser.gdv-theme-blue .gdv .mime.file { color: #2563eb; } /* blue-600 */
+
+/* THEME: yellow */
+.gdv-theme-yellow .mime.folder,
+.gdv-theme-yellow .mime.file,
+.gdv-browser.gdv-theme-yellow .gdv .mime.folder,
+.gdv-browser.gdv-theme-yellow .gdv .mime.file { color: #f59e0b; } /* amber-500 */
