@@ -38,3 +38,18 @@
   .gdv .icon-btn { width:28px; height:28px; }
   .gdv .icon-btn svg { width:16px; height:16px; }
 }
+
+
+/* Breadcrumb & link UX */
+.gdv .name-cell .row-link { cursor: pointer; }
+.gdv .crumb { cursor: pointer; }
+.gdv .crumb.current { cursor: default; text-decoration: none; color: inherit; }
+.gdv .crumb-icon { width:18px; height:18px; vertical-align:-3px; margin-right:4px; }
+
+
+/* Breadcrumb UX */
+.gdv .crumb.current { cursor: default; text-decoration: none; color: inherit; }
+.gdv .crumb { cursor: pointer; }
+/* Row link UX */
+.gdv .name-cell .row-link { cursor: pointer; display:inline-flex; align-items:center; gap:8px; text-decoration:none; }
+.gdv .name-cell .row-link:hover { text-decoration:underline; }

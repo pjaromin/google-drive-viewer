@@ -130,7 +130,7 @@ final class GDV_Plugin {
 
   /* ---------- Shortcode ---------- */
   public function shortcode($atts){
-    $atts = shortcode_atts(['key'=>''], $atts);
+    $atts = shortcode_atts(['key'=>'','root_label'=>'Root','icon_theme'=>''], $atts);
     $o = $this->get_opts();
 
     if (!empty($o['restrict_cap']) && !current_user_can($o['restrict_cap']))
@@ -150,9 +150,11 @@ final class GDV_Plugin {
       'apiKey'      => $o['api_key'],
       'rootFolder'  => $folderId,
       'cacheTTL'    => (int)$o['cache_ttl'],
+      'rootLabel'   => $atts['root_label'],
+      'iconTheme'   => $atts['icon_theme'],
     ]);
 
-    return '<div class="gdv-browser" data-root="'.esc_attr($folderId).'">
+    return '<div class="gdv-browser" data-root="'.esc_attr($folderId).'" data-root-label="'.esc_attr($atts["root_label"]).'" data-icon-theme="'.esc_attr($atts["icon_theme"]).'">
       <div class="gdv gdv-fallback" style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;color:#6b7280;">
         Loading Google Drive Viewer…
       </div>

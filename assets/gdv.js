@@ -1,27 +1,36 @@
+/* GDV single-file build — stable breadcrumbs + root label + hover + theming */
 (function(){
-  function el(tag, attrs={}, text){ const e=document.createElement(tag);
-    for(const k in attrs){ if(k==='class') e.className=attrs[k]; else e.setAttribute(k,attrs[k]); }
-    if(text) e.textContent=text; return e;
+  // ---------- tiny DOM helpers ----------
+  function el(tag, attrs={}, text){
+    const e = document.createElement(tag);
+    for (const k in attrs){
+      if (k === 'class') e.className = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    }
+    if (text) e.textContent = text;
+    return e;
   }
 
-  // ---- Inline SVG icons (no external deps) ----
-  function svg(pathD){ const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
-    s.setAttribute('viewBox','0 0 24 24'); s.setAttribute('aria-hidden','true');
-    s.innerHTML = `<path fill="currentColor" d="${pathD}"/>`; return s;
+  // ---------- icons (inline SVG; color is via CSS currentColor) ----------
+  function svg(pathD){
+    const s = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    s.setAttribute('viewBox','0 0 24 24');
+    s.setAttribute('aria-hidden','true');
+    s.innerHTML = `<path fill="currentColor" d="${pathD}"/>`;
+    return s;
   }
   const ICON = {
-    folder: () => svg('M10 4l2 2h8a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h5z'),
-    pdf:    () => svg('M6 2h7l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1v4h4'),
-    sheet:  () => svg('M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm3 4h10v2H7V7zm0 4h10v2H7v-2zm0 4h10v2H7v-2z'),
-    image:  () => svg('M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14h18zM7 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 6l-4-5-3 4-2-3-5 7h14z'),
-    audio:  () => svg('M9 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7-10v10l5-5-5-5z'),
-    video:  () => svg('M4 6h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm14 3l6 4-6 4V9z'),
-    slide:  () => svg('M3 4h18v12H3V4zm2 2v8h14V6H5zM4 18h16v2H4z'),
-    doc:    () => svg('M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1v4h4'),
-    view:   () => svg('M12 5c5.05 0 9.27 3.11 10.88 7.5C21.27 16.89 17.05 20 12 20S2.73 16.89 1.12 12.5C2.73 8.11 6.95 5 12 5zm0 2c-3.86 0-7.16 2.2-8.65 5.5C4.84 16.8 8.14 19 12 19s7.16-2.2 8.65-5.5C19.16 9.2 15.86 7 12 7zm0 2.5a4 4 0 1 1 0 8 4 4 0 0 1 0-8z'),
-    download:() => svg('M5 20h14a1 1 0 0 0 0-2H5a1 1 0 1 0 0 2zm7-16a1 1 0 0 0-1 1v7.586l-2.293-2.293a1 1 0 1 0-1.414 1.414l4 4a1 1 0 0 0 1.414 0l4-4a1 1 0 1 0-1.414-1.414L13 12.586V5a1 1 0 0 0-1-1z')
+    folder:  () => svg('M10 4l2 2h8a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h5z'),
+    home:    () => svg('M12 3l9 8h-3v10h-5V15H11v6H6V11H3l9-8z'),
+    pdf:     () => svg('M6 2h7l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1v4h4'),
+    sheet:   () => svg('M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm3 4h10v2H7V7zm0 4h10v2H7v-2zm0 4h10v2H7v-2z'),
+    image:   () => svg('M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14h18zM7 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 6l-4-5-3 4-2-3-5 7h14z'),
+    audio:   () => svg('M12 3v10.55A4 4 0 1 1 10 14V7h4V3h-2z'),
+    video:   () => svg('M17 10.5V6H3v12h14v-4.5l4 4v-11l-4 4z'),
+    doc:     () => svg('M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1v4h4'),
+    view:    () => svg('M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6z'),
+    download:() => svg('M5 20h14v-2H5v2zm7-18l-5.5 6h4v6h3v-6h4L12 2z')
   };
-
   function iconFor(mime){
     if (!mime) return ICON.doc();
     if (mime === 'application/vnd.google-apps.folder') return ICON.folder();
@@ -29,97 +38,129 @@
     if (mime.startsWith('audio/'))  return ICON.audio();
     if (mime.startsWith('video/'))  return ICON.video();
     if (mime === 'application/pdf') return ICON.pdf();
-    if (mime.includes('spreadsheet') || mime.includes('excel') || mime === 'text/csv') return ICON.sheet();
-    if (mime.includes('presentation')) return ICON.slide();
+    if (mime.includes('spreadsheet') || mime.includes('sheet')) return ICON.sheet();
     return ICON.doc();
   }
 
+  // ---------- API ----------
   async function apiFetch(url){
-    const r = await fetch(url.toString(), {credentials:'same-origin', headers:{'X-WP-Nonce': GDV.restNonce}});
-    if (!r.ok){
-      let msg = 'REST ' + r.status;
-      try { const j=await r.json(); if(j?.detail) msg+=' – '+(typeof j.detail==='string'?j.detail:JSON.stringify(j.detail)); }
-      catch(_){ try{ msg+=' – '+(await r.text()).slice(0,200);}catch(_e){} }
-      throw new Error(msg);
-    }
-    return r.json();
+    const u = (url instanceof URL) ? url : new URL(url, location.origin);
+    const res = await fetch(u.toString(), {
+      headers: {'X-WP-Nonce': GDV.restNonce}
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
   }
-
   async function apiList(folderId, pageToken=''){
-    const url = new URL(GDV.rest);
+    const url = new URL(GDV.rest, location.origin);
     url.searchParams.set('folderId', folderId);
-    if(pageToken) url.searchParams.set('pageToken', pageToken);
+    if (pageToken) url.searchParams.set('pageToken', pageToken);
     return apiFetch(url);
   }
+  async function apiDebug(){ try{ return apiFetch(new URL(GDV.restDebug, location.origin)); }catch(_){ return {log:[]}; } }
+  async function apiPing(){  return apiFetch(new URL(GDV.restPing,  location.origin)); }
 
-  async function apiDebug(){ try{return apiFetch(new URL(GDV.restDebug));}catch(e){return {log:[]};} }
-  async function apiPing(){ try{return apiFetch(new URL(GDV.restPing));}catch(e){throw e;} }
+  // ---------- UI render ----------
+  function render(container, state){
+    container.innerHTML = '';
+    const root = el('div', {class:'gdv'});
 
-  function render(container,state){
-    container.innerHTML='';
-    const root=el('div',{class:'gdv'});
-
-    // breadcrumbs
-    const bar=el('div',{class:'bar'});
-    state.crumbs.forEach((c,i)=>{
-      const a=el('a',{href:'#',class:'crumb'},c.name);
-      a.addEventListener('click',e=>{e.preventDefault();state.nav(c.id,false);});
-      bar.appendChild(a);
-      if(i<state.crumbs.length-1) bar.appendChild(el('span',{class:'sep'},'›'));
-    });
+    // Breadcrumbs
+    const bar = el('div', {class:'bar'});
+    (function(){
+      const n = state.crumbs.length;
+      for (let i=0; i<n; i++){
+        const c = state.crumbs[i];
+        const isLast = (i === n - 1);
+        if (isLast){
+          const span = el('span', {class:'crumb current'});
+          if (i===0){
+            const home = ICON.home();
+            home.classList.add('crumb-icon');
+            span.appendChild(home);
+            span.appendChild(document.createTextNode(' ' + c.name));
+          }else{
+            span.textContent = c.name;
+          }
+          bar.appendChild(span);
+        }else{
+          const a = el('a', {href:'#', class:'crumb'}, c.name);
+          a.addEventListener('click', e=>{
+            e.preventDefault();
+            state.nav(c.id, false, c.name);
+          });
+          if (i===0){
+            const home = ICON.home();
+            home.classList.add('crumb-icon');
+            a.prepend(home);
+          }
+          bar.appendChild(a);
+          bar.appendChild(el('span', {class:'sep'}, '›'));
+        }
+      }
+    })();
     root.appendChild(bar);
 
-    // table
-    const panel=el('div',{class:'panel'});
-    const table=el('table');
-    table.innerHTML='<thead><tr><th>Name</th><th>Last updated</th><th>Actions</th></tr></thead>';
-    const tbody=el('tbody');
+    // Table
+    const panel = el('div', {class:'panel'});
+    const table = el('table');
+    table.innerHTML = '<thead><tr><th>Name</th><th>Last updated</th><th>Actions</th></tr></thead>';
+    const tbody = el('tbody');
 
-    // add '..' up-directory entry
-    if(state.crumbs.length>1){
-      const tr=el('tr');
-      const nameTd=el('td'); nameTd.className='name-cell';
-      const icon=ICON.folder(); icon.classList.add('mime');
-      const up=el('a',{href:'#',class:'row-link'},'..');
-      up.addEventListener('click',e=>{
+    // Up one level ".."
+    if (state.crumbs.length > 1){
+      const tr = el('tr');
+      const nameTd = el('td'); nameTd.className = 'name-cell';
+      const upLink = el('a', {href:'#', class:'row-link'});
+      const icon = ICON.folder(); icon.classList.add('mime','folder');
+      upLink.appendChild(icon);
+      upLink.appendChild(document.createTextNode('..'));
+      upLink.addEventListener('click', e=>{
         e.preventDefault();
         state.crumbs.pop();
-        const parent=state.crumbs[state.crumbs.length-1];
-        state.nav(parent.id,false);
+        const parent = state.crumbs[state.crumbs.length-1];
+        state.nav(parent.id, false, parent.name);
       });
-      nameTd.appendChild(icon); nameTd.appendChild(up);
+      nameTd.appendChild(upLink);
       tr.appendChild(nameTd);
-      tr.appendChild(el('td',{},'')); // date empty
-      tr.appendChild(el('td',{},'')); // actions empty
+      tr.appendChild(el('td', {}, ''));
+      tr.appendChild(el('td', {}, ''));
       tbody.appendChild(tr);
     }
 
     // Folders
     state.folders.forEach(f=>{
-      const tr=el('tr');
-      const nameTd=el('td'); nameTd.className='name-cell';
-      const icon=iconFor('application/vnd.google-apps.folder'); icon.classList.add('mime');
-      const a=el('a',{href:'#',class:'row-link'},f.name);
-      a.addEventListener('click', e=>{ e.preventDefault(); state.nav(f.id,true,f.name); });
-      nameTd.appendChild(icon); nameTd.appendChild(a);
+      const tr = el('tr');
+      const nameTd = el('td'); nameTd.className = 'name-cell';
+      const link = el('a', {href:'#', class:'row-link'});
+      const icon = ICON.folder(); icon.classList.add('mime','folder');
+      link.appendChild(icon);
+      link.appendChild(document.createTextNode(f.name));
+      link.addEventListener('click', e=>{
+        e.preventDefault();
+        state.nav(f.id, true, f.name);
+      });
+      nameTd.appendChild(link);
       tr.appendChild(nameTd);
-      tr.appendChild(el('td',{},f.modified||''));
-      tr.appendChild(el('td',{},'')); 
+      tr.appendChild(el('td', {}, f.modified || ''));
+      tr.appendChild(el('td', {}, ''));
       tbody.appendChild(tr);
     });
 
     // Files
     state.files.forEach(f=>{
-      const tr=el('tr');
-      const nameTd=el('td'); nameTd.className='name-cell';
-      const icon=iconFor(f.mimeType); icon.classList.add('mime');
-      const nameLink=el('a',{href:f.webViewLink,target:'_blank',rel:'noopener',class:'row-link'},f.name);
-      nameTd.appendChild(icon); nameTd.appendChild(nameLink);
+      const tr = el('tr');
+      const nameTd = el('td'); nameTd.className = 'name-cell';
+      const link = el('a', {href:f.webViewLink, target:'_blank', rel:'noopener', class:'row-link'});
+      const icon = iconFor(f.mimeType); icon.classList.add('mime','file');
+      link.appendChild(icon);
+      link.appendChild(document.createTextNode(f.name));
+      nameTd.appendChild(link);
       tr.appendChild(nameTd);
-      tr.appendChild(el('td',{},f.modified||''));
-      const actions=el('td'); actions.className='actions';
-      const viewA=el('a',{class:'icon-btn',href:f.webViewLink,target:'_blank',rel:'noopener',title:'View'}); viewA.appendChild(ICON.view());
-      const dlA=el('a',{class:'icon-btn',href:(f.webContentLink||'#'),target:'_blank',rel:'noopener',title:'Download'}); dlA.appendChild(ICON.download());
+      tr.appendChild(el('td', {}, f.modified || ''));
+      const actions = el('td'); actions.className = 'actions';
+      const viewA = el('a', {class:'icon-btn', href:f.webViewLink, target:'_blank', rel:'noopener', title:'View'}); viewA.appendChild(ICON.view());
+      const dlA   = el('a', {class:'icon-btn', href:(f.webContentLink||f.webViewLink), target:'_blank', rel:'noopener', title:'Download'}); dlA.appendChild(ICON.download());
       actions.appendChild(viewA); actions.appendChild(dlA);
       tr.appendChild(actions);
       tbody.appendChild(tr);
@@ -131,33 +172,73 @@
     container.appendChild(root);
   }
 
+  // ---------- boot ----------
   async function boot(){
     document.querySelectorAll('.gdv-browser').forEach(async container=>{
       try{
-        try{await apiPing();}catch(e){const dbg=await apiDebug();return container.innerHTML='<div style="color:red">'+(e?.message||'REST failed')+'</div>'; }
+        // quick REST nonce sanity; show debug if REST fails
+        try { await apiPing(); } 
+        catch (e) { const dbg = await apiDebug(); container.innerHTML = '<div style="color:red">'+(e?.message||'REST failed')+'</div>'; return; }
 
-        const rootId=container.dataset.root||GDV.rootFolder;
-        const state={
-          crumbs:[{id:rootId,name:'Root'}],folders:[],files:[],
-          async nav(folderId,push=false,name='Folder'){
-            const data=await apiList(folderId);
-            this.folders=(data.folders||[]).map(f=>({id:f.id,name:f.name,modified:new Date(f.modifiedTime).toLocaleString()}));
-            this.files=(data.files||[]).map(f=>({
-              id:f.id,name:f.name,mimeType:f.mimeType||'',
-              modified:f.modifiedTime?new Date(f.modifiedTime).toLocaleString():'',
-              webViewLink:f.webViewLink||('https://drive.google.com/file/d/'+f.id+'/view'),
-              webContentLink:f.webContentLink||('https://drive.google.com/uc?export=download&id='+f.id)
+        // Inputs from localized script + data-attrs
+        const rootId    = container.dataset.root || GDV.rootFolder;
+        const rootLabel = container.dataset.rootLabel || GDV.rootLabel || 'Root';
+        const theme     = container.dataset.iconTheme || GDV.iconTheme || '';
+        if (theme) container.classList.add('gdv-theme-'+theme);
+
+        const nameCache = {}; // folderId -> name (remembered on click)
+
+        const state = {
+          crumbs: [{ id: rootId, name: rootLabel }],
+          folders: [],
+          files: [],
+          async nav(folderId, push=false, name='Folder'){
+            const targetId = folderId || rootId;
+
+            // prepare crumbs
+            if (targetId === rootId){
+              this.crumbs = [{ id: rootId, name: rootLabel }];
+            } else if (push){
+              nameCache[targetId] = name || nameCache[targetId] || 'Folder';
+              this.crumbs = [...this.crumbs, { id: targetId, name: nameCache[targetId] }];
+              history.pushState({ folderId: targetId }, '', '#'+targetId);
+            } else {
+              const label = name || nameCache[targetId] || 'Folder';
+              this.crumbs = [{ id: rootId, name: rootLabel }, { id: targetId, name: label }];
+            }
+
+            // fetch + render
+            const data = await apiList(targetId);
+            this.folders = (data.folders||[]).map(f=>({ id:f.id, name:f.name, modified:new Date(f.modifiedTime).toLocaleString() }));
+            this.files   = (data.files||[]).map(f=>({
+              id:f.id, name:f.name, mimeType:f.mimeType||'',
+              modified: f.modifiedTime ? new Date(f.modifiedTime).toLocaleString() : '',
+              webViewLink: f.webViewLink || ('https://drive.google.com/file/d/'+f.id+'/view'),
+              webContentLink: f.webContentLink || ('https://drive.google.com/uc?export=download&id='+f.id)
             }));
-            if(push){ this.crumbs.push({id:folderId,name}); history.pushState({folderId},'', '#'+folderId); }
-            render(container,this);
+
+            render(container, this);
           }
         };
-        const start=location.hash?location.hash.substring(1):rootId;
-        if(start!==rootId) state.crumbs.push({id:start,name:'Folder'});
-        await state.nav(start);
-        window.addEventListener('popstate',()=>{ const id=location.hash?location.hash.substring(1):rootId; state.nav(id); });
-      }catch(err){ console.error('GDV error',err); container.innerHTML='<div style="color:red">'+(err?.message||'Unknown')+'</div>'; }
+
+        // initial route (supports deep-link via #<folderId>)
+        let start = location.hash ? location.hash.substring(1) : rootId;
+        if (!start) start = rootId;
+        await state.nav(start, false);
+
+        // browser back/forward
+        window.addEventListener('popstate', ()=>{
+          const id = location.hash ? location.hash.substring(1) : rootId;
+          state.nav(id, false);
+        });
+      }catch(err){
+        console.error('GDV error', err);
+        container.innerHTML = '<div style="color:red">'+(err?.message||'Unknown')+'</div>';
+      }
     });
   }
-  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot):boot();
+
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', boot)
+    : boot();
 })();
