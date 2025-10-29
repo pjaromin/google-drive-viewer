@@ -45,9 +45,7 @@
   // ---------- API ----------
   async function apiFetch(url){
     const u = (url instanceof URL) ? url : new URL(url, location.origin);
-    const res = await fetch(u.toString(), {
-      headers: {'X-WP-Nonce': GDV.restNonce}
-    });
+    const res = await fetch(u.toString(), { headers: { 'X-WP-Nonce': GDV.restNonce } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   }
@@ -198,6 +196,10 @@
             // prepare crumbs
             if (targetId === rootId){
               this.crumbs = [{ id: rootId, name: rootLabel }];
+              // clear the hash so a future reload doesn’t think we deep-linked
+              if (location.hash) {
+                history.replaceState({ folderId: rootId }, '', location.pathname + location.search);
+              }
             } else if (push){
               nameCache[targetId] = name || nameCache[targetId] || 'Folder';
               this.crumbs = [...this.crumbs, { id: targetId, name: nameCache[targetId] }];
@@ -221,14 +223,23 @@
           }
         };
 
-        // initial route (supports deep-link via #<folderId>)
-        let start = location.hash ? location.hash.substring(1) : rootId;
-        if (!start) start = rootId;
+        // initial route (supports deep-link via #<folderId>, but normalizes root)
+        let hashId = location.hash ? location.hash.substring(1) : '';
+        if (hashId && hashId === rootId) {
+          // if hash points to the root, clear it
+          history.replaceState({ folderId: rootId }, '', location.pathname + location.search);
+          hashId = '';
+        }
+        const start = hashId || rootId;
         await state.nav(start, false);
 
-        // browser back/forward
-        window.addEventListener('popstate', ()=>{
-          const id = location.hash ? location.hash.substring(1) : rootId;
+        // browser back/forward (normalize to root when hash is empty or equals root)
+        window.addEventListener('popstate', () => {
+          let id = location.hash ? location.hash.substring(1) : '';
+          if (!id || id === rootId) {
+            history.replaceState({ folderId: rootId }, '', location.pathname + location.search);
+            id = rootId;
+          }
           state.nav(id, false);
         });
       }catch(err){
