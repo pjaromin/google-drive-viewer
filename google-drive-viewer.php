@@ -7,7 +7,9 @@
  * License:     GPL-2.0-or-later
  */
 
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) {
+    wp_die('Direct access not allowed.');
+}
 
 final class GDV_Plugin {
   const OPT        = 'gdv_options';
@@ -25,7 +27,8 @@ final class GDV_Plugin {
 
   /* ---------- Debug buffer (DB-based) ---------- */
   private function push_log($msg){
-    $line = '[GDV] '.(is_scalar($msg) ? $msg : wp_json_encode($msg));
+    $safe_msg = is_scalar($msg) ? sanitize_text_field((string)$msg) : sanitize_text_field(wp_json_encode($msg));
+    $line = '[GDV] ' . $safe_msg;
     $buf = get_option(self::DBG_OPTION, []);
     if (!is_array($buf)) $buf = [];
     $buf[] = $line;
@@ -219,7 +222,7 @@ final class GDV_Plugin {
 
     $this->dbg('api_list start folderId='.$folderId.' pageToken='.$pageToken);
 
-    $cache_key = 'gdv_'.md5($folderId.'|'.$pageToken);
+    $cache_key = 'gdv_'.hash('sha256', $folderId.'|'.$pageToken);
     if ($o['cache_ttl'] > 0 && ($cached = get_transient($cache_key))) {
       $this->dbg('cache hit for '.$cache_key);
       return rest_ensure_response($cached);
@@ -261,6 +264,10 @@ final class GDV_Plugin {
     }
 
     $data = json_decode($body, true);
+    if (!is_array($data)) {
+      $this->dbg('Invalid JSON response from Google Drive API');
+      return new WP_Error('gdv_json','Invalid API response',['status'=>500]);
+    }
     $folders=[]; $files=[];
     foreach (($data['files'] ?? []) as $f){
       if (($f['mimeType'] ?? '') === 'application/vnd.google-apps.folder') $folders[]=$f; else $files[]=$f;
